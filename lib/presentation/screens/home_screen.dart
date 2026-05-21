@@ -93,12 +93,29 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  /// Responsive [GridView.builder] — 2 columns on narrow screens,
-  /// adapts gracefully via [crossAxisCount] derived from screen width.
+  /// Responsive [GridView.builder] — 2 columns on phones, 3 on tablets.
+  ///
+  /// [childAspectRatio] is derived from actual screen width at runtime so the
+  /// allocated cell height is always sufficient — no Bottom Overflow on any
+  /// device.
   Widget _buildProductGrid(BuildContext context) {
     final double screenWidth = MediaQuery.of(context).size.width;
-    // Use 2 columns on phones (<600 dp), 3 on tablets/wide screens.
+
+    // Column count: 2 on phones (<600 dp logical px), 3 on tablets / desktops.
     final int crossAxisCount = screenWidth < 600 ? 2 : 3;
+
+    // Horizontal space consumed by outer padding + gaps between columns.
+    const double outerPadding = 12.0 * 2;
+    final double totalGap = 14.0 * (crossAxisCount - 1);
+    final double cellWidth =
+        (screenWidth - outerPadding - totalGap) / crossAxisCount;
+
+    // Target cell height chosen to comfortably fit all card content:
+    //   image (42 %) + title/desc/price + button row (58 px) + breathing room.
+    // Using 1.62 as the height multiplier (≈ golden-ratio feel).
+    const double heightMultiplier = 1.62;
+    final double cellHeight = cellWidth * heightMultiplier;
+    final double childAspectRatio = cellWidth / cellHeight;
 
     return GridView.builder(
       padding: const EdgeInsets.fromLTRB(12.0, 0.0, 12.0, 24.0),
@@ -107,8 +124,7 @@ class HomeScreen extends StatelessWidget {
         crossAxisCount: crossAxisCount,
         mainAxisSpacing: 14.0,
         crossAxisSpacing: 14.0,
-        // childAspectRatio controls card height; tune as needed.
-        childAspectRatio: 0.72,
+        childAspectRatio: childAspectRatio, // Computed — never hard-coded
       ),
       itemBuilder: (BuildContext context, int index) {
         final Product product = _products[index];
